@@ -11,7 +11,7 @@ describe("CryptoBuggy", function () {
     let cryptoBuggy : CryptoBuggy;
     let buggyToken : BuggyToken;
     let nft : NFT;
-    let price = ethers.utils.parseEther('0.0001');
+    let price = ethers.utils.parseEther('1.3');
     beforeEach(async () => {
         [deployer, user1] = await ethers.getSigners();
         nft = await 
@@ -28,23 +28,23 @@ describe("CryptoBuggy", function () {
       });
 
     it("Should be possible to invest and get nft", async function () {
-        await cryptoBuggy.connect(deployer).addFund("Tymur", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("Tymur", 1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
-        await cryptoBuggy.connect(deployer).addFund("Tymur", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("Tymur", 1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(2);
         expect(await buggyToken.balanceOf(deployer.address)).to.be.eq(price.mul(2));
     });
 
     it("Should be impossible to invest with another value than price", async function () {
-        await expect(cryptoBuggy.connect(deployer).addFund("Tymur", {value: ethers.utils.parseEther('11')})).to.be.
+        await expect(cryptoBuggy.connect(deployer).addFund("Tymur", 1, {value: ethers.utils.parseEther('11')})).to.be.
         revertedWith('Not enough funds to create the NFT');        
         expect(await nft.balanceOf(deployer.address)).to.be.eq(0);
     });
 
     it("Should be possible to invest and get nft with signature", async function () {
-        await cryptoBuggy.connect(deployer).addFund("Tymur", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("Tymur",  1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
-        await cryptoBuggy.connect(deployer).addFund("RedDuck", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("RedDuck", 1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(2);
         expect(await buggyToken.balanceOf(deployer.address)).to.be.eq(price.mul(2));
         expect((await nft.connect(deployer).ownershipRecord(1)).signature).to.be.eq("Tymur");
@@ -63,7 +63,7 @@ describe("CryptoBuggy", function () {
 
     it("Should be possible to set nftURI for deployer", async function () {
         const uri = "some-uri";
-        await cryptoBuggy.connect(deployer).addFund("Tymur", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("Tymur", 1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
         await nft.connect(deployer).setImage(1, uri);
         expect((await nft.connect(deployer).ownershipRecord(1)).tokenURI).to.be.eq(uri)
@@ -71,9 +71,14 @@ describe("CryptoBuggy", function () {
 
     it("Should be possible to set nftURI for not deployer", async function () {
         const uri = "some-uri";
-        await cryptoBuggy.connect(deployer).addFund("Tymur", {value: price});
+        await cryptoBuggy.connect(deployer).addFund("Tymur", 1, {value: price});
         expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
         await expect(nft.connect(user1).setImage(1, uri)).to.be.
         revertedWith('Ownable: caller is not the owner');        
+    });
+
+    it("Should be possible to buy multiplie NFTs", async function () {
+        await cryptoBuggy.connect(deployer).addFund("Tymur", 3, {value: price.mul(3)});
+        expect(await nft.balanceOf(deployer.address)).to.be.eq(3);      
     });
 });

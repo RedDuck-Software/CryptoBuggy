@@ -1,20 +1,28 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-import "./NFT.sol";
+import "./BuggyNFT.sol";
 import "./BuggyToken.sol";
 
 contract CryptoBuggy{
    uint256 public price;
-   NFT public nft;
+   BuggyNFT public buggyNFT;
    BuggyToken public buggyToken;
    constructor(uint256 _price, address _nft, address _buggyToken){
       price = _price;
-      nft = NFT(_nft);
+      buggyNFT = BuggyNFT(_nft);
       buggyToken = BuggyToken(_buggyToken);
    }
-   function addFund(string memory _signature) public payable{
-        require(msg.value == price, "Not enough funds to create the NFT");
-        nft.mintToken(msg.sender, _signature);
-        buggyToken.mintToken(msg.sender, price);
+   function addFund(string memory _signature, uint256 count) public payable{
+        uint256 expectedValue = price * count;
+        require(msg.value == expectedValue, "Not enough funds to create the NFT");
+        if(count == 1){
+            buggyNFT.mintToken(msg.sender, _signature);
+        }
+        else{
+         for(uint256 i = 0; i < count; i++){
+            buggyNFT.mintToken(msg.sender, _signature);
+         }
+        }
+        buggyToken.mintToken(msg.sender, expectedValue);
    }
 }
