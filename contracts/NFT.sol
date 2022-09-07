@@ -7,18 +7,27 @@ import "hardhat/console.sol";
 
 contract NFT is ERC721, Ownable {
     address public minter;
-    constructor(string memory name, string memory symbol, address _minter)
+    uint256 public tokenId;
+    mapping(uint256 => Data) public ownershipRecord;
+    constructor(string memory name, string memory symbol)
         ERC721(name, symbol)
     {
+
+    }
+    struct Data{
+      string tokenURI;
+      string signature;
+    }
+    function setImage(uint256 _id, string memory _nftURI) public onlyOwner{
+      ownershipRecord[_id].tokenURI = _nftURI;
+    }
+   function setMinter(address _minter) public onlyOwner{
       minter = _minter;
     }
-    
-    mapping(uint256 => string) public ownershipRecord;
-    uint256 public tokenId;
     function mintToken(address sponsor, string memory signature) public {
-        require(msg.sender == minter);
+        require(msg.sender == minter, "Only minter can mint NFT");
         tokenId = tokenId + 1;
-        ownershipRecord[tokenId] = signature;
+        ownershipRecord[tokenId].signature = signature;
         _safeMint(sponsor, tokenId);
     }
 }
