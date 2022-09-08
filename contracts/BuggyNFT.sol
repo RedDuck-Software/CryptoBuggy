@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract BuggyNFT is Ownable, ERC721URIStorage {
     address public minter;
     uint256 public tokenId;
+    uint256 public createdNFT;
     mapping(uint256 => string) public ownershipRecord;
 
     constructor(string memory name, string memory symbol)
@@ -15,10 +16,11 @@ contract BuggyNFT is Ownable, ERC721URIStorage {
 
     function setImage(uint256 _id, string memory _nftURI) public onlyOwner {
         _setTokenURI(_id, _nftURI);
+        createdNFT++;
     }
 
-    function getImage(uint256 _id) public view returns (string memory){
-       return tokenURI(_id);
+    function getImage(uint256 _id) public view returns (string memory) {
+        return tokenURI(_id);
     }
 
     function setMinter(address _minter) public onlyOwner {

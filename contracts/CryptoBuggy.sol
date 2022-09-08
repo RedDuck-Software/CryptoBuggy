@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CryptoBuggy is Ownable {
     uint256 public price;
+    mapping(address => uint256) public users;
+    uint256 public uniqUsers;
+    uint256 public boughtBuggy;
     BuggyNFT public buggyNFT;
     BuggyToken public buggyToken;
 
@@ -32,6 +35,11 @@ contract CryptoBuggy is Ownable {
                 buggyNFT.mintToken(msg.sender, _signature);
             }
         }
+        boughtBuggy += count;
+        if(users[msg.sender] == 0){
+            uniqUsers++;
+        }
+        users[msg.sender] += count;
         buggyToken.mintToken(msg.sender, expectedValue);
     }
 
