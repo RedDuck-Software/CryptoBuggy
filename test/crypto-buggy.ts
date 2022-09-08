@@ -115,4 +115,21 @@ describe('CryptoBuggy', function () {
     expect(await nft.connect(deployer).getImage(3)).to.be.eq(uri);
 
   });
+
+  it('Should be possible to withdraw balance for owner', async function () {
+    await cryptoBuggy.connect(deployer).addFund('Tymur', 1, { value: price });
+    expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
+    const balanceBeforeWithdraw = await ethers.provider.getBalance(deployer.address);
+    await cryptoBuggy.connect(deployer).withdraw(deployer.address);
+    const balanceAfterWithdraw = await ethers.provider.getBalance(deployer.address);
+    expect(balanceAfterWithdraw).gt(balanceBeforeWithdraw);
+  });
+
+  it('Should be impossible to withdraw balance for not-owner', async function () {
+    await cryptoBuggy.connect(deployer).addFund('Tymur', 1, { value: price });
+    expect(await nft.balanceOf(deployer.address)).to.be.eq(1);
+    await expect(cryptoBuggy.connect(user1).withdraw(user1.address)).to.be.revertedWith(
+      'Ownable: caller is not the owner',
+    );
+  });
 });
