@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 import "./BuggyNFT.sol";
 import "./BuggyToken.sol";
+import "./PartialBuggyNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CryptoBuggy is Ownable {
@@ -11,15 +12,29 @@ contract CryptoBuggy is Ownable {
     uint256 public boughtBuggy;
     BuggyNFT public buggyNFT;
     BuggyToken public buggyToken;
-
+    PartialBuggyNFT public partialBuggyNFT;
+    uint256 public raised;
     constructor(
         uint256 _price,
         address _nft,
+        address _partialNft,
         address _buggyToken
     ) {
         price = _price;
         buggyNFT = BuggyNFT(_nft);
         buggyToken = BuggyToken(_buggyToken);
+        partialBuggyNFT = PartialBuggyNFT(_partialNft);
+    }
+
+    function addFundPartially(string memory _signature) public payable{
+        uint256 futureNFT = partialBuggyNFT.tokenId() + 1;
+        partialBuggyNFT.addPartialUser(futureNFT, _signature, msg.sender);
+        raised += msg.value;
+        if(raised >= price){
+            partialBuggyNFT.mintToken();
+            raised = 0;
+        }
+        uniqUsers++;
     }
 
     function addFund(string memory _signature, uint256 count) public payable {

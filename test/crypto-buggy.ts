@@ -8,6 +8,8 @@ import {
   CryptoBuggy__factory,
   BuggyNFT,
   BuggyNFT__factory,
+  PartialBuggyNFT,
+  PartialBuggyNFT__factory,
 } from '../typechain-types';
 
 describe('CryptoBuggy', function () {
@@ -16,12 +18,18 @@ describe('CryptoBuggy', function () {
   let cryptoBuggy: CryptoBuggy;
   let buggyToken: BuggyToken;
   let nft: BuggyNFT;
+  let partialNFT: PartialBuggyNFT;
   let price = ethers.utils.parseEther('1.3');
   beforeEach(async () => {
     [deployer, user1] = await ethers.getSigners();
     nft = await (
-      await new BuggyNFT__factory(deployer).deploy('1', '2')
+      await new BuggyNFT__factory(deployer).deploy('BUGGY', 'BGY')
     ).deployed();
+
+    partialNFT = await (
+      await new PartialBuggyNFT__factory(deployer).deploy('BUGGY', 'BGY')
+    ).deployed();
+
     buggyToken = await (
       await new BuggyToken__factory(deployer).deploy()
     ).deployed();
@@ -29,11 +37,13 @@ describe('CryptoBuggy', function () {
       await new CryptoBuggy__factory(deployer).deploy(
         price,
         nft.address,
+        partialNFT.address,
         buggyToken.address,
       )
     ).deployed();
 
     await nft.connect(deployer).setMinter(cryptoBuggy.address);
+    await partialNFT.connect(deployer).setMinter(cryptoBuggy.address);
     await buggyToken.connect(deployer).setMinter(cryptoBuggy.address);
   });
 
@@ -92,7 +102,6 @@ describe('CryptoBuggy', function () {
     expect(await nft.connect(deployer).ownershipRecord(1)).to.be.eq('Tymur');
     expect(await nft.connect(deployer).getImage(1)).to.be.eq(uri);
     expect(await nft.connect(deployer).createdNFT()).to.be.eq(1);
-
   });
 
   it('Should be possible to set nftURI for not deployer', async function () {
@@ -139,5 +148,64 @@ describe('CryptoBuggy', function () {
     await expect(
       cryptoBuggy.connect(user1).withdraw(user1.address),
     ).to.be.revertedWith('Ownable: caller is not the owner');
+  });
+
+  it('Should be possible to add funds partially', async function () {
+    await cryptoBuggy
+      .connect(deployer)
+      .addFundPartially('Tymur', { value: price.div(2) });
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(0);
+    expect(await cryptoBuggy.connect(deployer).uniqUsers()).to.be.eq(1);
+    await cryptoBuggy
+      .connect(deployer)
+      .addFundPartially('Tymur', { value: price.div(2) });
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(1);
+    await cryptoBuggy
+      .connect(deployer)
+      .addFundPartially('Tymur', { value: price.div(2) });
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(1);
+    await cryptoBuggy
+      .connect(user1)
+      .addFundPartially('Tymur', { value: price.div(3) });
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(1);
+    const tokenID = await partialNFT.connect(deployer).tokenId();
+    expect(
+      await partialNFT
+        .connect(deployer)
+        .ownershipRecord(tokenID, deployer.address),
+    ).to.be.eq('Tymur');
+  });
+
+  it('Should be possible to set nftURI for deployer', async function () {
+    const uri = 'some-uri';
+    await cryptoBuggy
+      .connect(deployer)
+      .addFundPartially('Tymur', { value: price.div(2) });
+    await cryptoBuggy
+      .connect(user1)
+      .addFundPartially('Tymur', { value: price.div(2) });
+
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(1);
+    await partialNFT.connect(deployer).setImage(1, uri);
+    expect(
+      await partialNFT.connect(deployer).ownershipRecord(1, deployer.address),
+    ).to.be.eq('Tymur');
+    expect(
+      await partialNFT.connect(deployer).ownershipRecord(1, user1.address),
+    ).to.be.eq('Tymur');
+
+    expect(await partialNFT.connect(deployer).getImage(1)).to.be.eq(uri);
+    expect(await partialNFT.connect(deployer).createdNFT()).to.be.eq(1);
+  });
+
+  it('Should be possible to set nftURI for not deployer', async function () {
+    const uri = 'some-uri';
+    await cryptoBuggy
+      .connect(deployer)
+      .addFundPartially('Tymur', { value: price });
+    expect(await partialNFT.balanceOf(deployer.address)).to.be.eq(1);
+    await expect(partialNFT.connect(user1).setImage(1, uri)).to.be.revertedWith(
+      'Ownable: caller is not the owner',
+    );
   });
 });
