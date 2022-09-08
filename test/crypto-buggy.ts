@@ -117,6 +117,7 @@ describe('CryptoBuggy', function () {
     expect(await nft.connect(deployer).getImage(1)).to.be.eq(uri);
     expect(await nft.connect(deployer).getImage(2)).to.be.eq(uri);
     expect(await nft.connect(deployer).getImage(3)).to.be.eq(uri);
+    expect(await cryptoBuggy.connect(deployer).uniqUsers()).to.be.eq(1);
   });
 
   it('Should be possible to withdraw balance for owner', async function () {
